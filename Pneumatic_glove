@@ -66,7 +66,41 @@ static void MX_ADC2_Init(void);
 int ADC_VAL[5];
 int ADC_PWM[2];
 //int teste[5] = {0};
+int teste_2[3] = {0};
+int teste_3 = 0;
 
+void buttons_control(int bot_1, int bot_2, int bot_3, int bot_4, int bot_5){
+	if (bot_1 == 1){
+		HAL_GPIO_WritePin(GPIOB, O_V_1_Pin, 1);
+	}
+	else{
+		HAL_GPIO_WritePin(GPIOB, O_V_1_Pin, 0);
+	}
+	if (bot_2 == 1){
+		HAL_GPIO_WritePin(GPIOB, O_V_2_Pin, 1);
+	}
+	else{
+		HAL_GPIO_WritePin(GPIOB, O_V_2_Pin, 0);
+	}
+	if (bot_3 == 1){
+		HAL_GPIO_WritePin(GPIOB, O_V_3_Pin, 1);
+	}
+	else{
+		HAL_GPIO_WritePin(GPIOB, O_V_3_Pin, 0);
+	}
+	if (bot_4 == 1){
+		HAL_GPIO_WritePin(GPIOB, O_V_4_Pin, 1);
+	}
+	else{
+		HAL_GPIO_WritePin(GPIOB, O_V_4_Pin, 0);
+	}
+	if (bot_5 == 1){
+		HAL_GPIO_WritePin(GPIOA, O_V_5_Pin, 1);
+	}
+	else{
+		HAL_GPIO_WritePin(GPIOA, O_V_5_Pin, 0);
+	}
+}
 /* USER CODE END 0 */
 
 /**
@@ -143,49 +177,95 @@ int main(void)
 	 HAL_ADC_Stop(&hadc1);
 	 HAL_ADC_Stop(&hadc2);
 
-	 __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, ADC_PWM[0]);
-	 __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, ADC_PWM[1]);
 
-	 if (HAL_GPIO_ReadPin(GPIOB, I_BOT_1_Pin) == 1){
-		 HAL_GPIO_WritePin(GPIOB, O_V_1_Pin, 1);
-		 //teste[0]=1;
+	 if((HAL_GPIO_ReadPin(GPIOA, I_CTRL_1_Pin)==1)&&
+	    (HAL_GPIO_ReadPin(GPIOA, I_CTRL_2_Pin)==1)&&
+	    (HAL_GPIO_ReadPin(GPIOA, I_CTRL_3_Pin)==0)){
+
+		 teste_2[0] = 1;
+		 teste_2[1] = 1;
+		 teste_2[2] = 0;
+
+		 teste_3 = 0;
+
+		 buttons_control(HAL_GPIO_ReadPin(GPIOB, I_BOT_1_Pin), HAL_GPIO_ReadPin(GPIOB, I_BOT_2_Pin),
+		 		 HAL_GPIO_ReadPin(GPIOB, I_BOT_3_Pin), HAL_GPIO_ReadPin(GPIOB, I_BOT_4_Pin),
+		 		 HAL_GPIO_ReadPin(GPIOA, I_BOT_5_Pin));
+
+		 __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, ADC_PWM[0]);
+		 __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, ADC_PWM[1]);
 	 }
+
+	 else if((HAL_GPIO_ReadPin(GPIOA, I_CTRL_1_Pin)==1)&&
+		 (HAL_GPIO_ReadPin(GPIOA, I_CTRL_2_Pin)==0)&&
+		 (HAL_GPIO_ReadPin(GPIOA, I_CTRL_3_Pin)==1)){
+
+		 teste_2[0] = 1;
+		 teste_2[1] = 0;
+		 teste_2[2] = 1;
+
+		 buttons_control(HAL_GPIO_ReadPin(GPIOB, I_BOT_1_Pin), HAL_GPIO_ReadPin(GPIOB, I_BOT_2_Pin),
+		 		 HAL_GPIO_ReadPin(GPIOB, I_BOT_3_Pin), HAL_GPIO_ReadPin(GPIOB, I_BOT_4_Pin),
+		 		 HAL_GPIO_ReadPin(GPIOA, I_BOT_5_Pin));
+
+		 //lógica de controle via sensor a ser desenvolvida
+		 teste_3 = 1;
+	 }
+
+	 else if((HAL_GPIO_ReadPin(GPIOA, I_CTRL_1_Pin)==0)&&
+	 	 (HAL_GPIO_ReadPin(GPIOA, I_CTRL_2_Pin)==1)&&
+	 	 (HAL_GPIO_ReadPin(GPIOA, I_CTRL_3_Pin)==0)){
+
+		 teste_2[0] = 0;
+		 teste_2[1] = 1;
+		 teste_2[2] = 0;
+
+		 teste_3 = 0;
+		 __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, ADC_PWM[0]);
+		 __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, ADC_PWM[1]);
+	 }
+
+	 else if((HAL_GPIO_ReadPin(GPIOA, I_CTRL_1_Pin)==0)&&
+		 (HAL_GPIO_ReadPin(GPIOA, I_CTRL_2_Pin)==0)&&
+		 (HAL_GPIO_ReadPin(GPIOA, I_CTRL_3_Pin)==1)){
+
+		 teste_2[0] = 0;
+		 teste_2[1] = 0;
+		 teste_2[2] = 1;
+
+		 //lógica de controle via sensor a ser desenvolvida
+		 teste_3 = 1;
+	 }
+
+	 else if((HAL_GPIO_ReadPin(GPIOA, I_CTRL_1_Pin)==1)&&
+		 (HAL_GPIO_ReadPin(GPIOA, I_CTRL_2_Pin)==0)&&
+		 (HAL_GPIO_ReadPin(GPIOA, I_CTRL_3_Pin)==0)){
+
+		 teste_2[0] = 1;
+		 teste_2[1] = 0;
+		 teste_2[2] = 0;
+
+		 teste_3 = 0;
+
+		 buttons_control(HAL_GPIO_ReadPin(GPIOB, I_BOT_1_Pin), HAL_GPIO_ReadPin(GPIOB, I_BOT_2_Pin),
+		 		 HAL_GPIO_ReadPin(GPIOB, I_BOT_3_Pin), HAL_GPIO_ReadPin(GPIOB, I_BOT_4_Pin),
+		 		 HAL_GPIO_ReadPin(GPIOA, I_BOT_5_Pin));
+
+		 __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 2012);
+		 __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 2012);
+	 }
+
 	 else{
-		 HAL_GPIO_WritePin(GPIOB, O_V_1_Pin, 0);
-		 //teste[0]=0;
+
+		 teste_2[0] = 0;
+		 teste_2[1] = 0;
+		 teste_2[2] = 0;
+
+		 teste_3 = 0;
+		 __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 2012);
+		 __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 2012);
 	 }
-	 if (HAL_GPIO_ReadPin(GPIOB, I_BOT_2_Pin) == 1){
-		 HAL_GPIO_WritePin(GPIOB, O_V_2_Pin, 1);
-		 //teste[1]=1;
-	 }
-	 else{
-		 HAL_GPIO_WritePin(GPIOB, O_V_2_Pin, 0);
-		 //teste[1]=0;
-	 }
-	 if (HAL_GPIO_ReadPin(GPIOB, I_BOT_3_Pin) == 1){
-		 HAL_GPIO_WritePin(GPIOB, O_V_3_Pin, 1);
-		 //teste[2]=1;
-	 }
-	 else{
-		 HAL_GPIO_WritePin(GPIOB, O_V_3_Pin, 0);
-		 //teste[2]=0;
-	 }
-	 if (HAL_GPIO_ReadPin(GPIOB, I_BOT_4_Pin) == 1){
-		 HAL_GPIO_WritePin(GPIOB, O_V_4_Pin, 1);
-		 //teste[3]=1;
-	 }
-	 else{
-		 HAL_GPIO_WritePin(GPIOB, O_V_4_Pin, 0);
-		 //teste[3]=0;
-	 }
-	 if (HAL_GPIO_ReadPin(GPIOA, I_BOT_5_Pin) == 1){
-		 HAL_GPIO_WritePin(GPIOA, O_V_5_Pin, 1);
-		 //teste[4]=1;
-	 }
-	 else{
-		 HAL_GPIO_WritePin(GPIOA, O_V_5_Pin, 0);
-		 //teste[4]=0;
-	 }
+
 
 	 HAL_Delay(100);
     /* USER CODE END WHILE */
@@ -524,11 +604,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : I_BOT_5_Pin */
-  GPIO_InitStruct.Pin = I_BOT_5_Pin;
+  /*Configure GPIO pins : I_BOT_5_Pin I_CTRL_1_Pin I_CTRL_2_Pin I_CTRL_3_Pin */
+  GPIO_InitStruct.Pin = I_BOT_5_Pin|I_CTRL_1_Pin|I_CTRL_2_Pin|I_CTRL_3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(I_BOT_5_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
