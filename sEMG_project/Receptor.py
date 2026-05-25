@@ -11,10 +11,11 @@ import time                                # biblioteca para a contagem do tempo
 
 MAX_SAMPLES   = 2000
 SAMPLING_RATE = 1000
+EMPTY_SPACE   = 0.2                        # tempo extra no final do gráfico em segundos
 
 
 try:
-    porta_bt = serial.Serial('COM4', 115200, timeout=0.1) # tenta associar o bluetooth a uma porta serial, limite de espera 0,1s
+    porta_bt = serial.Serial('COM4', 115200, timeout=0.1)   # tenta associar o bluetooth a uma porta serial, limite de espera 0,1s
     print("Conectado\n")                                    # envia a mensagem em caso de sucesso
 except Exception as e:
     print(f"Erro ao abrir a porta: {e}\n")                  # avisa se não tiver conseguido abrir a porta
@@ -43,7 +44,7 @@ def start(event):   # event = argumento necessário para a função de clique do
     ch4_data.clear()
 
     for g in graphs:
-        g.set_xlim(0, MAX_SAMPLES/SAMPLING_RATE)          # reseta o limite horizontal para o início da coleta
+        g.set_xlim(0, (MAX_SAMPLES/SAMPLING_RATE) + EMPTY_SPACE)  # reseta o limite horizontal para o início da coleta
     
     last_id  = None
     base_id  = None
@@ -175,9 +176,9 @@ def update_graph(frame):               # frame = argumento necessário para a fu
         txt_time.set_text(f"Tempo: {int(current_graph_time)}s")  # atualiza o cronômetro da tela
         window_size = MAX_SAMPLES / SAMPLING_RATE                # define o tamanho do gráfico em segundos
     
-        if current_graph_time > window_size:                           # atualiza a janela se necessário
+        if current_graph_time > window_size:                     # atualiza a janela se necessário
             for g in graphs:
-                    g.set_xlim(current_graph_time - window_size, current_graph_time)   # seta novos limites do gráfico
+                    g.set_xlim(current_graph_time - window_size, current_graph_time + EMPTY_SPACE)   # seta novos limites do gráfico
 
     return quad_1, quad_2, quad_3, quad_4, txt_bat, txt_time
 
@@ -192,26 +193,26 @@ quad_4, = graph_4.plot([], [], color = 'orange', linewidth = 1)
 
 graphs = [graph_1, graph_2, graph_3, graph_4]      # lista utilizada na função "star()" para resetar os limites dos gráficos
 
-graph_1 .set_ylim(0, 4100)                         # seta o limite vertical
-graph_1 .set_xlim(0, MAX_SAMPLES/SAMPLING_RATE)    # seta o limite horizontal
-graph_1 .grid(True)                                # coloca grade
-graph_1 .set_title(f"Canal {1}")                   # cria título
+graph_1 .set_ylim(0, 4100)                                       # seta o limite vertical
+graph_1 .set_xlim(0, (MAX_SAMPLES/SAMPLING_RATE) + EMPTY_SPACE)  # seta o limite horizontal
+graph_1 .grid(True)                                              # coloca grade
+graph_1 .set_title(f"Canal {1}")                                 # cria título
 graph_1 .xaxis.set_major_locator(ticker.MultipleLocator(1))  # Força o eixo X a mostrar apenas inteiros (de 1s em 1s)
 
 graph_2 .set_ylim(0, 4100)                         # gráficos foram separados para possibilitar configuração individual
-graph_2 .set_xlim(0, MAX_SAMPLES/SAMPLING_RATE)                         
+graph_2 .set_xlim(0, (MAX_SAMPLES/SAMPLING_RATE) + EMPTY_SPACE)                         
 graph_2 .grid(True)                                
 graph_2 .set_title(f"Canal {2}")
 graph_2 .xaxis.set_major_locator(ticker.MultipleLocator(1))
 
 graph_3 .set_ylim(0, 4100)                         
-graph_3 .set_xlim(0, MAX_SAMPLES/SAMPLING_RATE)                         
+graph_3 .set_xlim(0, (MAX_SAMPLES/SAMPLING_RATE) + EMPTY_SPACE)                         
 graph_3 .grid(True)                                
 graph_3 .set_title(f"Canal {3}")
 graph_3 .xaxis.set_major_locator(ticker.MultipleLocator(1))
 
 graph_4 .set_ylim(0, 4100)                         
-graph_4 .set_xlim(0, MAX_SAMPLES/SAMPLING_RATE)                         
+graph_4 .set_xlim(0, (MAX_SAMPLES/SAMPLING_RATE) + EMPTY_SPACE)                         
 graph_4 .grid(True)                                
 graph_4 .set_title(f"Canal {4}")
 graph_4 .xaxis.set_major_locator(ticker.MultipleLocator(1))
@@ -242,23 +243,6 @@ txt_time          = time_region.text(0.5, 0.5, "Tempo: --s",
                                    transform = time_region.transAxes,        
                                    ha = 'center', va = 'center',            
                                    fontsize = 10, fontweight = 'bold')
-
-
-if plt.get_backend() == 'TkAgg':                  # verifica se o backend é o Tkinter (padrão do Windows)
-    manager = plt.get_current_fig_manager()       # busca o gerente responsável por exibir a figura na tela
-    window = manager.window                       # extrai a janela original do windows e atribui a "window"
-    
-    window.update_idletasks()                     # força a realização dos cálculos de tamanho de janela (não natural)
-    width = window.winfo_width()                  # calcula a largura da janela
-    height = window.winfo_height()                # calcula a altura da janela
-    
-    screen_width  = window.winfo_screenwidth()    # lê a resolução horizontal do monitor e armazena em "screen_width"
-    screen_height = window.winfo_screenheight()   # lê a resolução vertical do monitor e armazena em "screen_height"
-      
-    x = (screen_width // 2) - (width // 2)        # calcula a coordenada X e Y exata para o centro
-    y = (screen_height // 2) - (height // 2)      # uso de duas barras para retornar um número inteiro
-    
-    window.geometry(f'{width}x{height}+{x}+{y}')  # aplica o posicionamento na janela do sistema operacional
 
 
 ani = animation.FuncAnimation(fig, update_graph, interval = 100, cache_frame_data=False) # função para atualizar o gráfico, chamando a função de atualização a cada 100 ms
