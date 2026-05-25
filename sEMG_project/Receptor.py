@@ -7,6 +7,10 @@ from matplotlib.widgets import Button
 import matplotlib.ticker as ticker
 import numpy as np                         # biblioteca para cálculos com listas
 import time                                # biblioteca para a contagem do tempo
+import os                                  # biblioteca para criar pastas e gerenciar arquivos
+import csv                                 # biblioteca para salvar em formato CSV
+import tkinter as tk                       # interface gráfica para a caixa de texto
+from tkinter import simpledialog,filedialog
 
 
 MAX_SAMPLES   = 2000
@@ -34,14 +38,83 @@ ch2_data = deque(maxlen=MAX_SAMPLES)
 ch3_data = deque(maxlen=MAX_SAMPLES)
 ch4_data = deque(maxlen=MAX_SAMPLES)
 
+historic_x   = []                                           # listas para salvamento de dados
+historic_ch1 = []                                           
+historic_ch2 = []
+historic_ch3 = []
+historic_ch4 = []
+
+
+def save_csv(local_csv, historic_x, historic_ch1, historic_ch2, historic_ch3, historic_ch4):
+    with open(local_csv, mode='w', newline='') as file_csv:
+        writer = csv.writer(file_csv)
+        writer.writerow(["Tempo (s)", "Canal 1", "Canal 2", "Canal 3", "Canal 4"])                        # escreve o cabeçalho das colunas
+        for t, c1, c2, c3, c4 in zip(historic_x, historic_ch1, historic_ch2, historic_ch3, historic_ch4): # junta as listas linha por linha e escreve no arquivo
+            writer.writerow([t,c1, c2, c3, c4])
+
+
+def save_txt(local_txt, folder_name, lost_ids, historic_x, historic_ch1, historic_ch2, historic_ch3, historic_ch4):
+    with open(local_txt, mode='w') as file_txt:
+        file_txt.write("=========================================\n")
+        file_txt.write(f"RELATÓRIO DA COLETA: {folder_name}\n")
+        file_txt.write("=========================================\n")
+        if len(lost_ids) == 0:
+            file_txt.write("Status: Concluído sem perdas!\n\n")
+        else:
+            file_txt.write("Status: Concluído com perdas!\n")
+            file_txt.write(f"Total de pacotes perdidos: {len(lost_ids)}\n")
+            file_txt.write(f"IDs dos pacotes perdidos: {lost_ids}\n\n")
+            
+        file_txt.write("DADOS EM FORMATO TABULAR (Tempo(s) | Ch1 | Ch2 | Ch3 | Ch4):\n")
+        for t, c1, c2, c3, c4 in zip(historic_x, historic_ch1, historic_ch2, historic_ch3, historic_ch4):
+            file_txt.write(f"{t:.3f}\t{c1}\t{c2}\t{c3}\t{c4}\n")
+
+
+def save_data():
+    root = tk.Tk()
+    root.withdraw()
+
+    base_dir = filedialog.askdirectory(title="Selecione onde deseja salvar a pasta da coleta")
+
+    if not base_dir:
+        print("Salvamento cancelado. Nenhuma pasta de destino foi selecionada.\n")
+        root.destroy()
+        return
+    
+    folder_name = simpledialog.askstring("Salvar Dados", "Digite o nome da pasta para esta coleta:")
+    root.destroy()
+
+    if folder_name:
+        full_path = os.path.join(base_dir, folder_name)
+        os.makedirs(full_path, exist_ok=True)
+        
+        local_csv = os.path.join(full_path, "dados.csv")
+        local_txt = os.path.join(full_path, "relatorio.txt")
+
+        save_csv(local_csv, historic_x, historic_ch1, historic_ch2, historic_ch3, historic_ch4)
+        save_txt(local_txt, folder_name, lost_ids, historic_x,historic_ch1, historic_ch2, historic_ch3, historic_ch4)
+
+        print(f"Arquivos salvos com sucesso na pasta: '{folder_name}/'\n")
+
+    else:
+        print("Salvamento cancelado ou nenhum nome inserido. Os dados não foram salvos.\n")
+
 
 def start(event):   # event = argumento necessário para a função de clique do botão, mas não é utilizado
     global colecting, last_id, lost_ids, base_id, current_graph_time
+    global historic_x,historic_ch1, historic_ch2, historic_ch3, historic_ch4
+
     x_data.clear()
     ch1_data.clear()
     ch2_data.clear()
     ch3_data.clear()
     ch4_data.clear()
+
+    historic_x.clear()
+    historic_ch1.clear()
+    historic_ch2.clear()
+    historic_ch3.clear()
+    historic_ch4.clear()
 
     for g in graphs:
         g.set_xlim(0, (MAX_SAMPLES/SAMPLING_RATE) + EMPTY_SPACE)  # reseta o limite horizontal para o início da coleta
@@ -69,6 +142,9 @@ def end(event):     # event = argumento necessário para a função de clique do
     porta_bt.write(b'E')
 
     print("Coleta encerrada. Sinal E enviado ao ESP\n")
+    
+    save_data()
+
     print("Relatório de coleta:\n")
     
     if len(lost_ids) == 0:
@@ -143,7 +219,13 @@ def axes_update(ch_1, ch_2, ch_3, ch_4, t_vector):
     ch2_data.extend(ch_2)
     ch3_data.extend(ch_3)
     ch4_data.extend(ch_4)                 
-                            
+
+    historic_x.extend(t_vector)
+    historic_ch1.extend(ch_1)
+    historic_ch2.extend(ch_2)
+    historic_ch3.extend(ch_3)
+    historic_ch4.extend(ch_4)
+
     quad_1.set_data(x_data, ch1_data)  # atribui a leitura ao gráfico 1 (tamanho, dados)
     quad_2.set_data(x_data, ch2_data)
     quad_3.set_data(x_data, ch3_data)
