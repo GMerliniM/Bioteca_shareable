@@ -88,8 +88,8 @@ def save_data():
         full_path = os.path.join(base_dir, folder_name)
         os.makedirs(full_path, exist_ok=True)
         
-        local_csv = os.path.join(full_path, "dados.csv")
-        local_txt = os.path.join(full_path, "relatorio.txt")
+        local_csv = os.path.join(full_path, "data.csv")
+        local_txt = os.path.join(full_path, "report.txt")
 
         save_csv(local_csv, historic_x, historic_ch1, historic_ch2, historic_ch3, historic_ch4)
         save_txt(local_txt, folder_name, lost_ids, historic_x,historic_ch1, historic_ch2, historic_ch3, historic_ch4)
