@@ -265,7 +265,7 @@ def update_graph(frame):               # frame = argumento necessário para a fu
     return quad_1, quad_2, quad_3, quad_4, txt_bat, txt_time
 
 
-fig, ((graph_1, graph_2), (graph_3, graph_4)) = plt.subplots(2, 2, figsize = (12, 8)) # organização do espaço (fig) em 2 x 2, 12x8 = size(inches)
+fig, ((graph_1, graph_2), (graph_3, graph_4)) = plt.subplots(2, 2, figsize = (8, 6)) # organização do espaço (fig) em 2 x 2, 12x8 = size(inches)
 plt.subplots_adjust(left = 0.1, bottom = 0.2, right = 0.9, top = 0.9, wspace = 0.4, hspace = 0.4) # definição da janela
 
 quad_1, = graph_1.plot([], [], color = 'blue',   linewidth = 1)     # cria objetos vazios para serem preenchidos posteriormente
@@ -308,7 +308,7 @@ bot_end_region   = plt.axes([0.30, 0.05, 0.05, 0.05])
 bot_end          = Button(bot_end_region, 'End', color = 'tomato')
 bot_end.on_clicked(end)
 
-bat_region       = plt.axes([0.55, 0.05, 0.1, 0.05])                
+bat_region       = plt.axes([0.567, 0.05, 0.1, 0.05])                
 bat_region.set_xticks([])                                                   # remove os traços que estariam no eixo x
 bat_region.set_yticks([])                                                   # remove os traços que estariam no eixo y
 bat_region.set_facecolor('#f0f0f0')                                       # cria uma área de coloração cinza-claro
