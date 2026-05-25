@@ -130,6 +130,7 @@ void loop() {                                                     //Recebe o pac
     
       portENTER_CRITICAL(&xCounterLock); // essas funções servem para garantir que não haja problemas no processador ao zerar o i - possibilidade de núcleos diferentes
       lCounter = 0;                      // reinicia a contagem de preenchimento dos vetores
+      usSimulatedSignal = 0;             // reinicia o sinal simulado para evitar erros no gráfico
       portEXIT_CRITICAL(&xCounterLock); 
      
       timerStart(pxTimer);         // habilita novamente os alarmes do timer
