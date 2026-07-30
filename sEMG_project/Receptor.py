@@ -6,7 +6,6 @@ import matplotlib.animation as animation   # para atualizar os gráficos em temp
 from matplotlib.widgets import Button
 import matplotlib.ticker as ticker
 import numpy as np                         # biblioteca para cálculos com listas
-import time                                # biblioteca para a contagem do tempo
 import os                                  # biblioteca para criar pastas e gerenciar arquivos
 import csv                                 # biblioteca para salvar em formato CSV
 import tkinter as tk                       # interface gráfica para a caixa de texto
@@ -43,61 +42,6 @@ historic_ch1 = []
 historic_ch2 = []
 historic_ch3 = []
 historic_ch4 = []
-
-
-def save_csv(local_csv, historic_x, historic_ch1, historic_ch2, historic_ch3, historic_ch4):
-    with open(local_csv, mode='w', newline='') as file_csv:
-        writer = csv.writer(file_csv)
-        writer.writerow(["Tempo (s)", "Canal 1", "Canal 2", "Canal 3", "Canal 4"])                        # escreve o cabeçalho das colunas
-        for t, c1, c2, c3, c4 in zip(historic_x, historic_ch1, historic_ch2, historic_ch3, historic_ch4): # junta as listas linha por linha e escreve no arquivo
-            writer.writerow([t,c1, c2, c3, c4])
-
-
-def save_txt(local_txt, folder_name, lost_ids, historic_x, historic_ch1, historic_ch2, historic_ch3, historic_ch4):
-    with open(local_txt, mode='w') as file_txt:
-        file_txt.write("=========================================\n")
-        file_txt.write(f"RELATÓRIO DA COLETA: {folder_name}\n")
-        file_txt.write("=========================================\n")
-        if len(lost_ids) == 0:
-            file_txt.write("Status: Concluído sem perdas!\n\n")
-        else:
-            file_txt.write("Status: Concluído com perdas!\n")
-            file_txt.write(f"Total de pacotes perdidos: {len(lost_ids)}\n")
-            file_txt.write(f"IDs dos pacotes perdidos: {lost_ids}\n\n")
-            
-        file_txt.write("DADOS EM FORMATO TABULAR (Tempo(s) | Ch1 | Ch2 | Ch3 | Ch4):\n")
-        for t, c1, c2, c3, c4 in zip(historic_x, historic_ch1, historic_ch2, historic_ch3, historic_ch4):
-            file_txt.write(f"{t:.3f}\t{c1}\t{c2}\t{c3}\t{c4}\n")
-
-
-def save_data():
-    root = tk.Tk()
-    root.withdraw()
-
-    base_dir = filedialog.askdirectory(title="Selecione onde deseja salvar a pasta da coleta")
-
-    if not base_dir:
-        print("Salvamento cancelado. Nenhuma pasta de destino foi selecionada.\n")
-        root.destroy()
-        return
-    
-    folder_name = simpledialog.askstring("Salvar Dados", "Digite o nome da pasta para esta coleta:")
-    root.destroy()
-
-    if folder_name:
-        full_path = os.path.join(base_dir, folder_name)
-        os.makedirs(full_path, exist_ok=True)
-        
-        local_csv = os.path.join(full_path, "data.csv")
-        local_txt = os.path.join(full_path, "report.txt")
-
-        save_csv(local_csv, historic_x, historic_ch1, historic_ch2, historic_ch3, historic_ch4)
-        save_txt(local_txt, folder_name, lost_ids, historic_x,historic_ch1, historic_ch2, historic_ch3, historic_ch4)
-
-        print(f"Arquivos salvos com sucesso na pasta: '{folder_name}/'\n")
-
-    else:
-        print("Salvamento cancelado ou nenhum nome inserido. Os dados não foram salvos.\n")
 
 
 def start(event):   # event = argumento necessário para a função de clique do botão, mas não é utilizado
@@ -157,13 +101,84 @@ def end(event):     # event = argumento necessário para a função de clique do
     last_id  = None   # essa limpeza não é necessária aqui, mas é boa prática para preservar memória
     lost_ids = []
 
+
+def save_data():
+    root = tk.Tk()
+    root.withdraw()
+
+    base_dir = filedialog.askdirectory(title="Selecione onde deseja salvar a pasta da coleta")
+
+    if not base_dir:
+        print("Salvamento cancelado. Nenhuma pasta de destino foi selecionada.\n")
+        root.destroy()
+        return
     
-def empty_space_if_lost(graph_start_t):
-    x_data.append(graph_start_t - 0.001)                         # atualiza o ponto inicial para o espaço vazio
-    ch1_data.append(np.nan)                                      # nan = not a number, criando o espaço vazio no gráfico
-    ch2_data.append(np.nan)
-    ch3_data.append(np.nan)
-    ch4_data.append(np.nan)
+    folder_name = simpledialog.askstring("Salvar Dados", "Digite o nome da pasta para esta coleta:")
+    root.destroy()
+
+    if folder_name:
+        full_path = os.path.join(base_dir, folder_name)
+        os.makedirs(full_path, exist_ok=True)
+        
+        local_csv = os.path.join(full_path, "data.csv")
+        local_txt = os.path.join(full_path, "report.txt")
+
+        save_csv(local_csv, historic_x, historic_ch1, historic_ch2, historic_ch3, historic_ch4)
+        save_txt(local_txt, folder_name, lost_ids, historic_x,historic_ch1, historic_ch2, historic_ch3, historic_ch4)
+
+        print(f"Arquivos salvos com sucesso na pasta: '{folder_name}/'\n")
+
+    else:
+        print("Salvamento cancelado ou nenhum nome inserido. Os dados não foram salvos.\n")
+
+
+def save_csv(local_csv, historic_x, historic_ch1, historic_ch2, historic_ch3, historic_ch4):
+    with open(local_csv, mode='w', newline='') as file_csv:
+        writer = csv.writer(file_csv)
+        writer.writerow(["Tempo (s)", "Canal 1", "Canal 2", "Canal 3", "Canal 4"])                        # escreve o cabeçalho das colunas
+        for t, c1, c2, c3, c4 in zip(historic_x, historic_ch1, historic_ch2, historic_ch3, historic_ch4): # junta as listas linha por linha e escreve no arquivo
+            writer.writerow([t,c1, c2, c3, c4])
+
+
+def save_txt(local_txt, folder_name, lost_ids, historic_x, historic_ch1, historic_ch2, historic_ch3, historic_ch4):
+    with open(local_txt, mode='w') as file_txt:
+        file_txt.write("=========================================\n")
+        file_txt.write(f"RELATÓRIO DA COLETA: {folder_name}\n")
+        file_txt.write("=========================================\n")
+        if len(lost_ids) == 0:
+            file_txt.write("Status: Concluído sem perdas!\n\n")
+        else:
+            file_txt.write("Status: Concluído com perdas!\n")
+            file_txt.write(f"Total de pacotes perdidos: {len(lost_ids)}\n")
+            file_txt.write(f"IDs dos pacotes perdidos: {lost_ids}\n\n")
+            
+        file_txt.write("DADOS EM FORMATO TABULAR (Tempo(s) | Ch1 | Ch2 | Ch3 | Ch4):\n")
+        for t, c1, c2, c3, c4 in zip(historic_x, historic_ch1, historic_ch2, historic_ch3, historic_ch4):
+            file_txt.write(f"{t:.3f}\t{c1}\t{c2}\t{c3}\t{c4}\n")
+
+
+def update_graph(frame):               # frame = argumento necessário para a função de animação, mas não é utilizado
+    global current_graph_time
+    if not colecting:
+        return quad_1, quad_2, quad_3, quad_4, txt_bat, txt_time # mantém os gráficos congelados se não coletando
+    
+    result = unpack_data()                                       # recebe os valores de unpack_data
+
+    if result is not None:                                       # atualiza as variáveis se os valores não forem nulos
+        ch_1, ch_2, ch_3, ch_4, bat, t_vector, graph_end_t = result
+        current_graph_time = graph_end_t
+
+        axes_update(ch_1, ch_2, ch_3, ch_4, t_vector)                 
+        bat_update(bat)
+            
+        txt_time.set_text(f"Tempo: {int(current_graph_time)}s")  # atualiza o cronômetro da tela
+        window_size = MAX_SAMPLES / SAMPLING_RATE                # define o tamanho do gráfico em segundos
+    
+        if current_graph_time > window_size:                     # atualiza a janela se necessário
+            for g in graphs:
+                    g.set_xlim(current_graph_time - window_size, current_graph_time + EMPTY_SPACE)   # seta novos limites do gráfico
+
+    return quad_1, quad_2, quad_3, quad_4, txt_bat, txt_time
 
 
 def unpack_data():
@@ -212,6 +227,14 @@ def unpack_data():
         return None                    # retorno de segurança para o caso de não chegar pacote
 
 
+def empty_space_if_lost(graph_start_t):
+    x_data.append(graph_start_t - 0.001)                         # atualiza o ponto inicial para o espaço vazio
+    ch1_data.append(np.nan)                                      # nan = not a number, criando o espaço vazio no gráfico
+    ch2_data.append(np.nan)
+    ch3_data.append(np.nan)
+    ch4_data.append(np.nan)
+
+
 def axes_update(ch_1, ch_2, ch_3, ch_4, t_vector):
 
     x_data.extend(t_vector)
@@ -239,30 +262,6 @@ def bat_update(bat):
         txt_bat.set_color('red')
     else:
         txt_bat.set_color('black')
-
-
-def update_graph(frame):               # frame = argumento necessário para a função de animação, mas não é utilizado
-    global current_graph_time
-    if not colecting:
-        return quad_1, quad_2, quad_3, quad_4, txt_bat, txt_time # mantém os gráficos congelados se não coletando
-    
-    result = unpack_data()                                       # recebe os valores de unpack_data
-
-    if result is not None:                                       # atualiza as variáveis se os valores não forem nulos
-        ch_1, ch_2, ch_3, ch_4, bat, t_vector, graph_end_t = result
-        current_graph_time = graph_end_t
-
-        axes_update(ch_1, ch_2, ch_3, ch_4, t_vector)                 
-        bat_update(bat)
-            
-        txt_time.set_text(f"Tempo: {int(current_graph_time)}s")  # atualiza o cronômetro da tela
-        window_size = MAX_SAMPLES / SAMPLING_RATE                # define o tamanho do gráfico em segundos
-    
-        if current_graph_time > window_size:                     # atualiza a janela se necessário
-            for g in graphs:
-                    g.set_xlim(current_graph_time - window_size, current_graph_time + EMPTY_SPACE)   # seta novos limites do gráfico
-
-    return quad_1, quad_2, quad_3, quad_4, txt_bat, txt_time
 
 
 fig, ((graph_1, graph_2), (graph_3, graph_4)) = plt.subplots(2, 2, figsize = (8, 6)) # organização do espaço (fig) em 2 x 2, 12x8 = size(inches)
