@@ -77,7 +77,7 @@ void IRAM_ATTR readAndSend() {
 
 
 void LED_action(int val, int pin){
-  if (val != 0)
+  if (val > 1500)
     digitalWrite(pin, 1);
   else
     digitalWrite(pin, 0);
