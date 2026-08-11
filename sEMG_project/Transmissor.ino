@@ -11,15 +11,16 @@
 #define ADC_CH_EMG4 ADC1_CHANNEL_4         // Pino 32
 #define ADC_CH_BAT ADC1_CHANNEL_5          // Pino 33
 
+volatile uint16_t valCh1, valCh2, valCh3, valCh4, valBat;  // variáveis para armazenar os valores lidos do ADC
+
 BluetoothSerial SerialBT;
 QueueHandle_t xPacketQueue;                // identificador da fila criada no protocolo do ESP
 hw_timer_t * pxTimer = nullptr;            // nullptr é exclusivo para ponteiros e indica que ele aponta para lugar nenhum por enquanto
 
-uint16_t usSimulatedSignal = 0;
-bool transmitting = false;
+volatile bool transmitting = false;
 
 typedef struct {
-  uint16_t usSyncWord =  0xA55A;            // identificador de início de pacote
+  uint16_t usSyncWord =  0xA55A;           // identificador de início de pacote
   uint32_t ulId = 0;
   uint16_t usV1[SIZE] = {0};               // canal 1 EMG
   uint16_t usV2[SIZE] = {0};               // canal 2 EMG
@@ -37,16 +38,21 @@ portMUX_TYPE xCounterLock = portMUX_INITIALIZER_UNLOCKED; // Trava de segurança
 
 void IRAM_ATTR readAndSend() {
   
-  xPackPool[lChosenPack].usV1[lCounter] = usSimulatedSignal;           // rampa crescente
-  xPackPool[lChosenPack].usV2[lCounter] = 4000 - usSimulatedSignal;    // rampa decrescente
-  xPackPool[lChosenPack].usV3[lCounter] = (usSimulatedSignal >> 1);    // rampa crescente
-  xPackPool[lChosenPack].usV4[lCounter] = 2000;                        // valor constante
+  valCh1 = adc1_get_raw(ADC_CH_EMG1);     // função para leitura rápida do ADC
+  valCh2 = adc1_get_raw(ADC_CH_EMG2);
+  valCh3 = adc1_get_raw(ADC_CH_EMG3);
+  valCh4 = adc1_get_raw(ADC_CH_EMG4);
+  valBat = adc1_get_raw(ADC_CH_BAT);
 
-  usSimulatedSignal = (usSimulatedSignal + 4) % 4000;
+  xPackPool[lChosenPack].usV1[lCounter] = valCh1;   // associação da leitura à posição no pacote    
+  xPackPool[lChosenPack].usV2[lCounter] = valCh2;    
+  xPackPool[lChosenPack].usV3[lCounter] = valCh3;    
+  xPackPool[lChosenPack].usV4[lCounter] = valCh4;                        
+
   lCounter++;
 
   if (lCounter >= SIZE) { 
-    xPackPool[lChosenPack].ucBattery = 255;            // simula a bateria sempre em 100% na escala de 8 bits 
+    xPackPool[lChosenPack].ucBattery = valBat;             
     
     if(xQueueIsQueueFullFromISR(xPacketQueue) == pdFALSE){
       Pack* pxPackToSend = &xPackPool[lChosenPack];    // o pacote preenchido do vetor de pacotes é atribuído ao endereço pxPackToSend
@@ -70,6 +76,14 @@ void IRAM_ATTR readAndSend() {
 }                                      // os pacotes tem tamanho +2 para forçar o erro do envio para a fila se o bluetooth estiver lento, descartando alguns pacotes.
 
 
+void LED_action(int val, int pin){
+  if (val != 0)
+    digitalWrite(pin, 1);
+  else
+    digitalWrite(pin, 0);
+}
+
+
 void setup() {
   SerialBT.begin("ESP32-BT");
   Serial.begin(115200);
@@ -82,6 +96,18 @@ void setup() {
   adc1_config_channel_atten(ADC_CH_EMG3, ADC_ATTEN_DB_12); 
   adc1_config_channel_atten(ADC_CH_EMG4, ADC_ATTEN_DB_12);
   adc1_config_channel_atten(ADC_CH_BAT,  ADC_ATTEN_DB_12);
+
+  pinMode(19, OUTPUT);                               // LED CH1
+  pinMode(18, OUTPUT);                               // LED CH2
+  pinMode(5 , OUTPUT);                               // LED CH3
+  pinMode(17, OUTPUT);                               // LED CH4
+  pinMode(16, OUTPUT);                               // LED BT
+
+  digitalWrite(19, LOW);                             // LED CH1
+  digitalWrite(18, LOW);                             // LED CH2
+  digitalWrite(5, LOW);                              // LED CH3
+  digitalWrite(17, LOW);                             // LED CH4
+  digitalWrite(16, LOW);                             // LED BT
 
   pxTimer = timerBegin(1000000);                     // determina qual timer será usado (0) e seta a escala para 1 us
   timerAttachInterrupt(pxTimer, &readAndSend);     // associa a interrupção gerada pelo alarme do timer à função onTimer
@@ -97,23 +123,31 @@ void setup() {
 
 
 void loop() {                                                     //Recebe o pacote da fila (retorna pdTRUE) e faz o loop dormir enquanto estiver vazia (portMAX_DELAY)
+
   if (SerialBT.available()) {
     char cmd = SerialBT.read();
     if (cmd == 'S') transmitting = true;
     if (cmd == 'E') transmitting = false;
   }
   
+  LED_action(SerialBT.hasClient(), 16);
+  
+  LED_action(valCh1, 19);
+  LED_action(valCh2, 18);
+  LED_action(valCh3, 5);
+  LED_action(valCh4, 17);
+
   Pack* pxPackReceived;                                           // ponteiro que receberá o endereço da fila
 
   if (xQueueReceive(xPacketQueue, &pxPackReceived, portMAX_DELAY) == pdTRUE) { 
 
-    if (SerialBT.hasClient() && transmitting){                                      // envia os pacotes apenas se o bluetooth estiver conectado
+    if (SerialBT.hasClient() && transmitting){                      // envia os pacotes apenas se o bluetooth estiver conectado
       SerialBT.write((const uint8_t*)pxPackReceived, sizeof(Pack)); // faz o envio do pacote via bluetooth. O casting está ali em razão do tipo necessário da função
     }
     else {
       timerStop(pxTimer);                                   // desabilita os alarmes do timer
 
-      while(!SerialBT.hasClient() || !transmitting){                                 // verifica novamente a conexão
+      while(!SerialBT.hasClient() || !transmitting){        // verifica novamente a conexão
         if(!SerialBT.hasClient()){
            transmitting = false;
         }
@@ -122,6 +156,19 @@ void loop() {                                                     //Recebe o pac
            if (cmd == 'S') transmitting = true;
            if (cmd == 'E') transmitting = false;
         }
+
+        LED_action(SerialBT.hasClient(), 16);       // Atualiza o status do BT em pausa
+
+        int monitorCh1 = adc1_get_raw(ADC_CH_EMG1); // checagem dos ADCs para atualizar os LEDs dos canais mesmo se não houver transmissão.
+        int monitorCh2 = adc1_get_raw(ADC_CH_EMG2);
+        int monitorCh3 = adc1_get_raw(ADC_CH_EMG3);
+        int monitorCh4 = adc1_get_raw(ADC_CH_EMG4);
+
+        LED_action(monitorCh1, 19);
+        LED_action(monitorCh2, 18);
+        LED_action(monitorCh3, 5);
+        LED_action(monitorCh4, 17);
+
         delay(50);
       }
 
@@ -130,7 +177,6 @@ void loop() {                                                     //Recebe o pac
     
       portENTER_CRITICAL(&xCounterLock); // essas funções servem para garantir que não haja problemas no processador ao zerar o i - possibilidade de núcleos diferentes
       lCounter = 0;                      // reinicia a contagem de preenchimento dos vetores
-      usSimulatedSignal = 0;             // reinicia o sinal simulado para evitar erros no gráfico
       portEXIT_CRITICAL(&xCounterLock); 
      
       timerStart(pxTimer);         // habilita novamente os alarmes do timer
